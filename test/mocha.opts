@@ -1,0 +1,4 @@
+--bail 
+--require @babel/register
+--watch
+--require test/helper.js

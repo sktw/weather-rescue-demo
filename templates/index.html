@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <title>Weather Rescue DEMO</title>
+        <% htmlWebpackPlugin.options.context.css.forEach(function(css) { %>
+            <%= css %>
+        <% }) %>
+    </head>
+    <body>
+        <%= htmlWebpackPlugin.options.context.icons %>
+        <div id="app">
+        </div>
+        <% htmlWebpackPlugin.options.context.js.forEach(function(js) { %>
+            <%= js %>
+        <% }) %>
+    </body>
+</html>
