@@ -11,14 +11,15 @@ export function initialLoad() {
         return dispatch(ProjectActions.fetchProject())
             .then(() => {
                 return dispatch(WorkflowActions.fetchActiveWorkflows());
-            }).
-            then(() => {
+            })
+            .then(() => {
                 const {workflow} = getState();
                 const activeWorkflows = workflow.activeWorkflows;
                 // TODO - choose random workflow?
 
                 return dispatch(selectWorkflow(activeWorkflows[0].id));
             })
+            .catch(error => console.error(error));
     }
 }
 
@@ -43,7 +44,8 @@ export function selectWorkflow(id) {
                 dispatch(SubjectActions.setSubjectSet(subjectSets[0].id));
                 
                 return dispatch(selectSubject());
-            });
+            })
+            .catch(error => console.error(error));
     }
 }
 
@@ -56,11 +58,11 @@ function selectSubject() {
             })
             .then(() => {
                 dispatch(ClassificationActions.startClassification());
-            }).
-            then(() => {
+            })
+            .then(() => {
                 dispatch(TaskActions.nextStep());
-            }).
-            catch(error => console.error(error));
+            })
+            .catch(error => console.error(error));
     }
 }
 
@@ -74,6 +76,7 @@ export function classificationCompleted() {
             .then(() => {
                 dispatch(TaskActions.nextSubject());
                 return dispatch(selectSubject());
-            });
+            })
+            .catch(error => console.error(error));
     }
 }
