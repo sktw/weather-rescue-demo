@@ -14,10 +14,15 @@ export function initialLoad() {
             })
             .then(() => {
                 const {workflow} = getState();
-                const activeWorkflows = workflow.activeWorkflows;
-                // TODO - choose random workflow?
+                if (workflow.status === WorkflowActions.WORKFLOW_STATUS.ACTIVE_WORKFLOWS_EMPTY) {
+                    return Promise.resolve();
+                }
+                else {
+                    const activeWorkflows = workflow.activeWorkflows;
+                    // TODO - choose random workflow?
 
-                return dispatch(selectWorkflow(activeWorkflows[0].id));
+                    return dispatch(selectWorkflow(activeWorkflows[0].id));
+                }
             })
             .catch(error => console.error(error));
     }

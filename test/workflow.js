@@ -75,7 +75,7 @@ describe('workflowReducer', () => {
         });
 
         expect(state).to.deep.equal(objectAssign({}, initialState, {
-            status: WorkflowActions.WORKFLOW_STATUS.READY,
+            status: WorkflowActions.WORKFLOW_STATUS.WORKFLOW_READY,
             currentId: '9965',
             currentWorkflow: workflowsResponseAberdeen
         }));
@@ -135,12 +135,34 @@ describe('workflowReducer', () => {
         });
 
         expect(state).to.deep.equal(objectAssign({}, initialState, {
-            status: WorkflowActions.WORKFLOW_STATUS.READY,
+            status: WorkflowActions.WORKFLOW_STATUS.ACTIVE_WORKFLOWS_READY,
             activeWorkflows: activeWorkflowsResponse.map(({id, display_name}) => ({id, displayName: display_name}))
         }));
 
         expect(checker.check()).to.be.true;
     });
+
+    it('should handle FETCH_ACTIVE_WORKFLOWS_SUCCESS with empty workflows', () => {
+        let state = objectAssign({}, initialState, {
+            status: WorkflowActions.WORKFLOW_STATUS.FETCHING
+        });
+
+        checker.setState(state);
+
+        state = workflowReducer(state, {
+            type: WorkflowActions.WORKFLOW_TYPES.FETCH_ACTIVE_WORKFLOWS_SUCCESS,
+            data: []
+        });
+
+        expect(state).to.deep.equal(objectAssign({}, initialState, {
+            status: WorkflowActions.WORKFLOW_STATUS.ACTIVE_WORKFLOWS_EMPTY,
+            activeWorkflows: []
+        }));
+
+        expect(checker.check()).to.be.true;
+    });
+
+
 
 
     it('should handle FETCH_ACTIVE_WORKFLOWS_ERROR', () => {

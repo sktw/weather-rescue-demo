@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import {connect} from 'react-redux';
 import * as Actions from '../actions';
 import {TASK_STATUS} from '../actions/task';
+import {WORKFLOW_STATUS} from '../actions/workflow';
 import {generateSessionId} from '../session';
 import Transcribe from './Transcribe';
 import Summary from './Summary';
@@ -46,9 +47,9 @@ class App extends React.Component {
     }
 
     renderStep() {
-        const {status, locationTitle, values, valuesOk, subject, dispatch} = this.props;
+        const {taskStatus, locationTitle, values, valuesOk, subject, dispatch} = this.props;
 
-        switch (status) {
+        switch (taskStatus) {
             case TASK_STATUS.INIT:
                 return null;
 
@@ -85,37 +86,51 @@ class App extends React.Component {
     }
 
     render() {
-        const {currentWorkflowId, activeWorkflows, dispatch} = this.props;
-        const step = this.renderStep();
+        const {workflowStatus, taskStatus, currentWorkflowId, activeWorkflows, dispatch} = this.props;
 
-        return (
-            <React.Fragment>
-                <WorkflowSelector 
-                    currentWorkflowId={currentWorkflowId}
-                    activeWorkflows={activeWorkflows} 
-                    dispatch={dispatch} 
-                />
+        if (workflowStatus === WORKFLOW_STATUS.ACTIVE_WORKFLOWS_EMPTY) {
+            return (
+                <div className="outer-container"> 
+                    <div className="alert alert-secondary" role="alert">
+                        {"There are no active workflows available!"}
+                    </div>
+                </div>
+            );
+        }
+        else {
+            return (
                 <div className="outer-container">
-                    {step === null ?
+                    {workflowStatus === WORKFLOW_STATUS.WORKFLOW_READY ?
+                        <WorkflowSelector 
+                            currentWorkflowId={currentWorkflowId}
+                            activeWorkflows={activeWorkflows} 
+                            dispatch={dispatch} 
+                        /> :
+                        null
+                    }
+                    {taskStatus === TASK_STATUS.INIT ?
                         this.renderLoader() :
                         <div className="main-container">
-                            <SubjectViewer />
-                            {step}
+                            <div className="main-inner-container">
+                                <SubjectViewer />
+                                {this.renderStep()}
+                            </div>
                         </div>
                     }
                 </div>
-            </React.Fragment>
-        );
+            );
+        }
     }
 }
 
 App.propTypes = {
-    currentWorkflowId: PropTypes.string.isRequired,
+    currentWorkflowId: PropTypes.string,
     activeWorkflows: PropTypes.arrayOf(PropTypes.object).isRequired,
     subject: PropTypes.object,
     image: PropTypes.object.isRequired,
     locationTitle: PropTypes.string,
-    status: PropTypes.string.isRequired,
+    taskStatus: PropTypes.string.isRequired,
+    workflowStatus: PropTypes.string.isRequired,
     values: PropTypes.object.isRequired,
     valuesOk: PropTypes.bool.isRequired,
     dispatch: PropTypes.func.isRequired
@@ -129,7 +144,8 @@ function mapStateToProps(storeState) {
         activeWorkflows: workflow.activeWorkflows,
         image: image,
         subject: subject,
-        status: task.status,
+        taskStatus: task.status,
+        workflowStatus: workflow.status,
         locationTitle: task.locationTitle,
         values: {
             pressure: task.pressure,

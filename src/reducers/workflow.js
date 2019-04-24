@@ -19,7 +19,7 @@ function fetchWorkflow(state) {
 }
 
 function fetchWorkflowSuccess(state, action) {
-    return objectAssign({}, state, {status: WORKFLOW_STATUS.READY, currentWorkflow: action.data});
+    return objectAssign({}, state, {status: WORKFLOW_STATUS.WORKFLOW_READY, currentWorkflow: action.data});
 }
 
 function fetchWorkflowError(state, action) {
@@ -39,8 +39,9 @@ function fetchActiveWorkflowsSuccess(state, action) {
 
     // TODO - remove filter for 1872+ workflows
     activeWorkflows = activeWorkflows.filter(({displayName}) => /^\w+-3$/.test(displayName));
+    const newStatus = activeWorkflows.length === 0 ? WORKFLOW_STATUS.ACTIVE_WORKFLOWS_EMPTY : WORKFLOW_STATUS.ACTIVE_WORKFLOWS_READY;
 
-    return objectAssign({}, state, {status: WORKFLOW_STATUS.READY, activeWorkflows});
+    return objectAssign({}, state, {status: newStatus, activeWorkflows});
 }
 
 function fetchActiveWorkflowsError(state, action) {

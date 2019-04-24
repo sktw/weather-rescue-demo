@@ -19,8 +19,10 @@ export const WORKFLOW_TYPES = createActionTypes('workflow', {
 export const WORKFLOW_STATUS = {
   IDLE: 'IDLE',
   FETCHING: 'FETCHING',
-  READY: 'READY',
-  ERROR: 'ERROR',
+  ACTIVE_WORKFLOWS_READY: 'ACTIVE_WORKFLOWS_READY',
+  ACTIVE_WORKFLOWS_EMPTY: 'ACTIVE_WORKFLOWS_EMPTY',
+  WORKFLOW_READY: 'WORKFLOW_READY',
+  ERROR: 'ERROR'
 };
 
 function fetchWorkflowSuccess(data) {

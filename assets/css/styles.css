@@ -15,11 +15,15 @@ html, body {
 }
 
 .outer-container {
+    margin-top: 20px;
+}
+
+.main-container {
     height: 100vh;
     margin-top: 30px;
 }
 
-.main-container {
+.main-inner-container {
     height: 100%;
     display: flex;
     flex-direction: column;
@@ -72,7 +76,6 @@ html, body {
 }
 
 .workflow-selector {
-    margin-top: 20px;
 }
 
 .workflow-selector select {
