@@ -12,6 +12,7 @@ class ImageViewer extends React.Component {
         super(props);
         this.viewerRef = null;
         this.canvasRef = null;
+        this.handleResize = this.handleResize.bind(this);
         this.handleKeyDown = this.handleKeyDown.bind(this);
         this.handleKeyUp = this.handleKeyUp.bind(this);
         this.handleMouseDown = this.handleMouseDown.bind(this);
@@ -24,6 +25,7 @@ class ImageViewer extends React.Component {
         return (
             <div className="viewer" ref={el => this.viewerRef = el} onKeyDown={this.handleKeyDown} onKeyUp={this.handleKeyUp} tabIndex="0">
                 <canvas onMouseDown={this.handleMouseDown} style={{cursor: this.getCursor()}} ref={el => this.canvasRef = el} />
+                {this.props.children}
             </div>
         );
     }
@@ -42,7 +44,7 @@ class ImageViewer extends React.Component {
         this.handleZoom();
 
         window.addEventListener('mouseup', this.handleMouseUp, false);
-        window.addEventListener('resize', this.handleZoom, false);
+        window.addEventListener('resize', this.handleResize, false);
 
         const {img} = this.props;
         const imageMetadata = {
@@ -101,6 +103,10 @@ class ImageViewer extends React.Component {
         return this.scene.deltaFromView(delta);
     }
 
+    handleResize() {
+        this.handleZoom();
+    }
+
     handleKeyDown() {
     }
 
@@ -143,6 +149,11 @@ class ImageViewer extends React.Component {
         }
     }
 
+    getViewerSize() {
+        // return size of viewer
+        return [this.viewerRef.clientWidth, this.viewerRef.clientHeight];
+    }
+
     getImageRect() {
         // return image tl and br
         const size = this.getImageSize();
@@ -161,14 +172,13 @@ class ImageViewer extends React.Component {
             },
 
             'fit-height': () => {
-                const containerWidth = this.viewerRef.clientWidth;
-                const containerHeight = this.viewerRef.clientHeight;
+                const [containerWidth, containerHeight] = this.getViewerSize();
                 zoomScale = Math.min(Infinity, containerWidth / width, containerHeight / height);
                 this.scaleCanvas(zoomScale);
             },
 
             'fit-width': () => {
-                const containerWidth = this.viewerRef.clientWidth;
+                const [containerWidth] = this.getViewerSize();
                 zoomScale = containerWidth / width;
                 this.scaleCanvas(zoomScale);
             },
@@ -193,7 +203,8 @@ ImageViewer.propTypes = {
     img: PropTypes.instanceOf(Element).isRequired,
     zoomValue: PropTypes.string.isRequired,
     rotation: PropTypes.number.isRequired,
-    dispatch: PropTypes.func.isRequired
+    dispatch: PropTypes.func.isRequired,
+    children: PropTypes.element
 };
 
 export default ImageViewer;

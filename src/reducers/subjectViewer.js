@@ -10,6 +10,10 @@ function getInitialState() {
             [TOOL_TYPES.ANNOTATE]: SUBTOOL_TYPES.ANNOTATE.MOVE,
             [TOOL_TYPES.PAN]: SUBTOOL_TYPES.PAN.VERTICAL
         },
+        highlight: {
+            on: false,
+            size: 50
+        },
         pan: [0, 0],
         annotations: {
             lines: [],
@@ -25,6 +29,16 @@ function setTool(state, action) {
 function setSubTool(state, action) {
     const subTools = objectAssign({}, state.subTools, {[state.tool]: action.subTool});
     return objectAssign({}, state, {subTools});
+}
+
+function setHighlightOn(state, action) {
+    const highlight = objectAssign({}, state.highlight, {on: action.on});
+    return objectAssign({}, state, {highlight});
+}
+
+function setHighlightSize(state, action) {
+    const highlight = objectAssign({}, state.highlight, {size: action.size});
+    return objectAssign({}, state, {highlight});
 }
 
 function setPan(state, action) {
@@ -53,6 +67,10 @@ function reducer(state = getInitialState(), action) {
             return setTool(state, action);
         case SUBJECT_VIEWER_TYPES.SET_SUBTOOL:
             return setSubTool(state, action);
+        case SUBJECT_VIEWER_TYPES.SET_HIGHLIGHT_ON:
+            return setHighlightOn(state, action);
+        case SUBJECT_VIEWER_TYPES.SET_HIGHLIGHT_SIZE:
+            return setHighlightSize(state, action);
         case SUBJECT_VIEWER_TYPES.SET_PAN:
             return setPan(state, action);
         case SUBJECT_VIEWER_TYPES.SET_ANNOTATIONS:

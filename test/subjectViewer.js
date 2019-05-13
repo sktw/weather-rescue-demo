@@ -22,6 +22,10 @@ const initialState = objectAssign({}, {
         [TOOL_TYPES.ANNOTATE]: SUBTOOL_TYPES.ANNOTATE.MOVE,
         [TOOL_TYPES.PAN]: SUBTOOL_TYPES.PAN.VERTICAL
     },
+    highlight: {
+        on: false,
+        size: 50
+    },
     pan: [0, 0],
     annotations: {
         lines: [],
@@ -68,6 +72,46 @@ describe('reducer', () => {
 
         expect(checker.check()).to.be.true;
     });
+
+    it('should handle SET_HIGHLIGHT_ON', () => {
+        let state = initialState;
+        checker.setState(state);
+
+        state = reducer(state, {
+            type: SubjectViewerActions.SUBJECT_VIEWER_TYPES.SET_HIGHLIGHT_ON,
+            on: true
+        });
+
+        expect(state).to.deep.equal(objectAssign({}, initialState, {
+            highlight: {
+                on: true,
+                size: 50
+            }
+        }));
+
+        expect(checker.check()).to.be.true;
+    });
+
+    it('should handle SET_HIGHLIGHT_SIZE', () => {
+        let state = initialState;
+        checker.setState(state);
+
+        state = reducer(state, {
+            type: SubjectViewerActions.SUBJECT_VIEWER_TYPES.SET_HIGHLIGHT_SIZE,
+            size: 48
+        });
+
+        expect(state).to.deep.equal(objectAssign({}, initialState, {
+            highlight: {
+                on: false,
+                size: 48
+            }
+        }));
+
+        expect(checker.check()).to.be.true;
+    });
+
+
 
     it('should handle SET_PAN', () => {
         let state = initialState;
@@ -232,6 +276,32 @@ describe('setSubTool', () => {
         expect(actions[0]).to.deep.equal({
             type: SubjectViewerActions.SUBJECT_VIEWER_TYPES.SET_SUBTOOL,
             subTool: SUBTOOL_TYPES.ANNOTATE.EDIT
+        });
+    });
+});
+
+describe('setHighlightOn', () => {
+    it('should set the highlight on', () => {
+        const store = storeCreator(initialState);
+        store.dispatch(SubjectViewerActions.setHighlightOn(true));
+        const actions = store.getActions();
+        expect(actions).to.have.length(1);
+        expect(actions[0]).to.deep.equal({
+            type: SubjectViewerActions.SUBJECT_VIEWER_TYPES.SET_HIGHLIGHT_ON,
+            on: true
+        });
+    });
+});
+
+describe('setHighlightSize', () => {
+    it('should set the highlight size', () => {
+        const store = storeCreator(initialState);
+        store.dispatch(SubjectViewerActions.setHighlightSize(52));
+        const actions = store.getActions();
+        expect(actions).to.have.length(1);
+        expect(actions[0]).to.deep.equal({
+            type: SubjectViewerActions.SUBJECT_VIEWER_TYPES.SET_HIGHLIGHT_SIZE,
+            size: 52
         });
     });
 });

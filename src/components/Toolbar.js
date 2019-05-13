@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import {setZoomValue, applyRotation, reset} from '../actions/viewer';
-import {MenuButton, ButtonGroup} from './DrawingTools';
+import {MenuButton, ButtonGroup} from './toolbarButtons';
 
 const ZOOM_OPTIONS = [
     ['fit-width', 'Fit Width'],
@@ -58,7 +58,7 @@ class Toolbar extends React.Component {
 
         const percentageOptions = PERCENTAGE_OPTIONS.map(([value, enabled]) => {
             const label = value + '%';
-                return <option key={value} value={value} disabled={!enabled} hidden={!enabled}>{label}</option>;
+            return <option key={value} value={value} disabled={!enabled} hidden={!enabled}>{label}</option>;
         });
 
         const options = zoomOptions.concat(percentageOptions);

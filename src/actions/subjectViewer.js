@@ -3,6 +3,8 @@ import {createActionTypes} from '../utils';
 export const SUBJECT_VIEWER_TYPES = createActionTypes('subjectViewer', {
     SET_TOOL: 'SET_TOOL',
     SET_SUBTOOL: 'SET_SUBTOOL',
+    SET_HIGHLIGHT_ON: 'SET_HIGHLIGHT_ON',
+    SET_HIGHLIGHT_SIZE: 'SET_HIGHLIGHT_SIZE',
     SET_PAN: 'SET_PAN',
     SET_ANNOTATIONS: 'SET_ANNOTATIONS',
     RESET_PAN: 'RESET_PAN',
@@ -47,6 +49,20 @@ export function setSubTool(subTool) {
     return {
         type: SUBJECT_VIEWER_TYPES.SET_SUBTOOL,
         subTool
+    };
+}
+
+export function setHighlightOn(on) {
+    return {
+        type: SUBJECT_VIEWER_TYPES.SET_HIGHLIGHT_ON,
+        on
+    };
+}
+
+export function setHighlightSize(size) {
+    return {
+        type: SUBJECT_VIEWER_TYPES.SET_HIGHLIGHT_SIZE,
+        size
     };
 }
 

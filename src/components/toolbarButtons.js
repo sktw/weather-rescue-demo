@@ -77,15 +77,26 @@ ToolButton.propTypes = {
 };
 
 export function ButtonGroup(props) {
+    const {separatorLeft = false, separatorRight = false} = props;
+
+
+    const className = classList([
+        ["menu-button-group", true],
+        ["menu-separator-left", separatorLeft],
+        ["menu-separator-right", separatorRight]
+    ]);
+
     return (
-        <div className="menu-button-group">
+        <div className={className}>
             {props.children}
         </div>
     );
 }
 
 ButtonGroup.propTypes = {
-    children: PropTypes.any
+    children: PropTypes.any,
+    separatorLeft: PropTypes.bool,
+    separatorRight: PropTypes.bool
 };
 
 export function ToolButtonContainer(props) {
