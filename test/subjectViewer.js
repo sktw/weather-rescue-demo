@@ -13,9 +13,13 @@ const storeCreator = configureStore([thunk]);
 
 const initialState = objectAssign({}, {
     zoomValue: 'fit-width',
-    zoomPercentage: 100,
+    zoomScale: 1.0,
     rotation: 0,
-    error: null
+    pan: [0, 0],
+    viewerSize: null,
+    imageSize: null,
+    error: null,
+    maintainCentre: false
 }, {
     tool: TOOL_TYPES.PAN,
     subTools: {
@@ -24,9 +28,9 @@ const initialState = objectAssign({}, {
     },
     highlight: {
         on: false,
+        defaultSize: 50,
         size: 50
     },
-    pan: [0, 0],
     annotations: {
         lines: [],
         rectangles: []
@@ -39,15 +43,15 @@ describe('reducer', () => {
     });
 
     it('should handle SET_TOOL', () => {
-        let state = initialState;
-        checker.setState(state);
+        const start = objectAssign({}, initialState);
+        checker.setState(start);
 
-        state = reducer(state, {
+        const state = reducer(start, {
             type: SubjectViewerActions.SUBJECT_VIEWER_TYPES.SET_TOOL,
             tool: TOOL_TYPES.ANNOTATE
         });
 
-        expect(state).to.deep.equal(objectAssign({}, initialState, {
+        expect(state).to.deep.equal(objectAssign({}, start, {
             tool: TOOL_TYPES.ANNOTATE
         }));
 
@@ -55,15 +59,15 @@ describe('reducer', () => {
     });
 
     it('should handle SET_SUBTOOL', () => {
-        let state = initialState;
-        checker.setState(state);
+        const start = objectAssign({}, initialState);
+        checker.setState(start);
 
-        state = reducer(state, {
+        const state = reducer(start, {
             type: SubjectViewerActions.SUBJECT_VIEWER_TYPES.SET_SUBTOOL,
             subTool: SUBTOOL_TYPES.PAN.HORIZONTAL
         });
 
-        expect(state).to.deep.equal(objectAssign({}, initialState, {
+        expect(state).to.deep.equal(objectAssign({}, start, {
             subTools: {
                 [TOOL_TYPES.ANNOTATE]: SUBTOOL_TYPES.ANNOTATE.MOVE,
                 [TOOL_TYPES.PAN]: SUBTOOL_TYPES.PAN.HORIZONTAL
@@ -74,36 +78,39 @@ describe('reducer', () => {
     });
 
     it('should handle SET_HIGHLIGHT_ON', () => {
-        let state = initialState;
-        checker.setState(state);
+        const start = objectAssign({}, initialState);
+        checker.setState(start);
 
-        state = reducer(state, {
+        const state = reducer(start, {
             type: SubjectViewerActions.SUBJECT_VIEWER_TYPES.SET_HIGHLIGHT_ON,
             on: true
         });
 
-        expect(state).to.deep.equal(objectAssign({}, initialState, {
+        expect(state).to.deep.equal(objectAssign({}, start, {
             highlight: {
                 on: true,
+                defaultSize: 50,
                 size: 50
-            }
+            },
+            maintainCentre: true
         }));
 
         expect(checker.check()).to.be.true;
     });
 
     it('should handle SET_HIGHLIGHT_SIZE', () => {
-        let state = initialState;
-        checker.setState(state);
+        const start = objectAssign({}, initialState);
+        checker.setState(start);
 
-        state = reducer(state, {
+        const state = reducer(start, {
             type: SubjectViewerActions.SUBJECT_VIEWER_TYPES.SET_HIGHLIGHT_SIZE,
             size: 48
         });
 
-        expect(state).to.deep.equal(objectAssign({}, initialState, {
+        expect(state).to.deep.equal(objectAssign({}, start, {
             highlight: {
                 on: false,
+                defaultSize: 50,
                 size: 48
             }
         }));
@@ -111,57 +118,27 @@ describe('reducer', () => {
         expect(checker.check()).to.be.true;
     });
 
+    it('should handle SET_VIEWER_SIZE', () => {
+        const start = objectAssign({}, initialState);
+        checker.setState(start);
 
-
-    it('should handle SET_PAN', () => {
-        let state = initialState;
-        checker.setState(state);
-
-        state = reducer(state, {
-            type: SubjectViewerActions.SUBJECT_VIEWER_TYPES.SET_PAN,
-            pan: [5, 10]
+        const state = reducer(start, {
+            type: ViewerActions.VIEWER_TYPES.SET_VIEWER_SIZE,
+            size: [500, 800]
         });
 
-        expect(state).to.deep.equal(objectAssign({}, initialState, {
-            pan: [5, 10]
-        }));
-
-        expect(checker.check()).to.be.true;
-    });
-
-    it('should handle RESET_PAN and reset only pan', () => {
-        let state = objectAssign({}, initialState, {
-            subTools: {
-                [TOOL_TYPES.ANNOTATE]: SUBTOOL_TYPES.ANNOTATE.MOVE,
-                [TOOL_TYPES.PAN]: SUBTOOL_TYPES.PAN.HORIZONTAL
-            },
-            pan: [5, 4],
-            annotations: {
-                lines: [[[4, 19], [-6, 100]]],
-                rectangles: []
-            }
-        });
-
-        checker.setState(state);
-
-        state = reducer(state, {
-            type: SubjectViewerActions.SUBJECT_VIEWER_TYPES.RESET_PAN
-        });
-
-        expect(state).to.deep.equal(objectAssign({}, initialState, {
-            subTools: {
-                [TOOL_TYPES.ANNOTATE]: SUBTOOL_TYPES.ANNOTATE.MOVE,
-                [TOOL_TYPES.PAN]: SUBTOOL_TYPES.PAN.HORIZONTAL
-            },
-            pan: [0, 0],
-            annotations: {
-                lines: [[[4, 19], [-6, 100]]],
-                rectangles: []
+        expect(state).to.deep.equal(objectAssign({}, start, {
+            viewerSize: [500, 800],
+            highlight: {
+                on: false,
+                defaultSize: 14,
+                size: 14
             }
         }));
 
         expect(checker.check()).to.be.true;
     });
+
 
     it('should handle SET_ANNOTATIONS', () => {
         let state = initialState;
@@ -249,9 +226,6 @@ describe('reducer', () => {
 
         expect(checker.check()).to.be.true;
     });
-
-
-    
 });
 
 describe('setTool', () => {
@@ -302,31 +276,6 @@ describe('setHighlightSize', () => {
         expect(actions[0]).to.deep.equal({
             type: SubjectViewerActions.SUBJECT_VIEWER_TYPES.SET_HIGHLIGHT_SIZE,
             size: 52
-        });
-    });
-});
-
-describe('setPan', () => {
-    it('should set the pan', () => {
-        const store = storeCreator(initialState);
-        store.dispatch(SubjectViewerActions.setPan([0, 4]));
-        const actions = store.getActions();
-        expect(actions).to.have.length(1);
-        expect(actions[0]).to.deep.equal({
-            type: SubjectViewerActions.SUBJECT_VIEWER_TYPES.SET_PAN,
-            pan: [0, 4]
-        });
-    });
-});
-
-describe('resetPan', () => {
-    it('should reset the pan', () => {
-        const store = storeCreator(initialState);
-        store.dispatch(SubjectViewerActions.resetPan());
-        const actions = store.getActions();
-        expect(actions).to.have.length(1);
-        expect(actions[0]).to.deep.equal({
-            type: SubjectViewerActions.SUBJECT_VIEWER_TYPES.RESET_PAN
         });
     });
 });

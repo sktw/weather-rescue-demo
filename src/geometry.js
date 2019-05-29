@@ -124,6 +124,56 @@ export function rectExpand(rect, delta) {
     return [[x0 - dx, y0 - dy], [x1 + dx, y1 + dy]];
 }
 
+export function multiplyMatrixVector(m, v) {
+    const [[a, b, c], [d, e, f]] = m;
+    const [x, y] = v;
+    return [a * x + b * y + c, d * x + e * y + f];
+}
+
+export function multiplyMatrixMatrix(m1, m2) {
+    const [[a, b, c], [d, e, f]] = m1;
+    const [[g, h, i], [j, k, l]] = m2;
+
+    return [
+        [a * g + b * j, a * h + b * k, a * i + b * l + c],
+        [d * g + e * j, d * h + e * k, d * i + e * l + f]
+    ];
+}
+
+export function getRotationMatrix(rotation, size) {
+    // return rotation matrix that keeps tl corner of rectangle (size (w, h)) at origin
+
+    const [w, h] = size;
+
+    switch (rotation) {
+        case 0:
+            return [[1, 0, 0], [0, 1, 0]];
+        case 1:
+            return [[0, -1, h], [1, 0, 0]];
+        case 2:
+            return [[-1, 0, w], [0, -1, h]];
+        case 3:
+            return [[0, 1, 0], [-1, 0, w]];
+    }
+}
+
+export function getInverseRotationMatrix(rotation, size) {
+    // return inverse rotation matrix that keeps tl corner of rectangle (size (w, h)) at origin
+
+    const [w, h] = size;
+
+    switch (rotation) {
+        case 0:
+            return [[1, 0, 0], [0, 1, 0]];
+        case 1:
+            return [[0, 1, 0], [-1, 0, h]];
+        case 2:
+            return [[-1, 0, w], [0, -1, h]];
+        case 3:
+            return [[0, -1, w], [1, 0, 0]];
+    }
+}
+
 export function createZeroMatrix(n) {
     const m = [];
     const row = createZeroVector(n);

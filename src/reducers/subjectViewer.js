@@ -12,14 +12,23 @@ function getInitialState() {
         },
         highlight: {
             on: false,
+            defaultSize: 50,
             size: 50
         },
-        pan: [0, 0],
         annotations: {
             lines: [],
             rectangles: []
         }
     };
+}
+
+const HIGHLIGHT_SCALE = 1.0 / 35;
+
+function getHighlightSize(width) {
+    // empirically this gives approximately the right highlighter size for a row in the weather report 
+    // fitted to the given width
+
+    return Math.round(HIGHLIGHT_SCALE * width);
 }
 
 function setTool(state, action) {
@@ -33,7 +42,8 @@ function setSubTool(state, action) {
 
 function setHighlightOn(state, action) {
     const highlight = objectAssign({}, state.highlight, {on: action.on});
-    return objectAssign({}, state, {highlight});
+    const maintainCentre = action.on; // set viewer flag to maintain centre
+    return objectAssign({}, state, {maintainCentre, highlight});
 }
 
 function setHighlightSize(state, action) {
@@ -41,12 +51,11 @@ function setHighlightSize(state, action) {
     return objectAssign({}, state, {highlight});
 }
 
-function setPan(state, action) {
-    return objectAssign({}, state, {pan: action.pan});
-}
-
-function resetPan(state) {
-    return objectAssign({}, state, getInitialState(), {tool: state.tool, subTools: state.subTools, annotations: state.annotations});
+function setHighlightDefaultSize(state, action) {
+    const [width] = action.size;
+    const highlightSize = getHighlightSize(width);
+    const highlight = objectAssign({}, state.highlight, {size: highlightSize, defaultSize: highlightSize});
+    return objectAssign({}, state, {highlight});
 }
 
 function setAnnotations(state, action) {
@@ -58,7 +67,8 @@ function resetAnnotations(state) {
 }
 
 function reset(state) {
-    return objectAssign({}, state, getInitialState(), {tool: state.tool, subTools: state.subTools});
+    const highlight = objectAssign({}, state.highlight, {size: state.highlight.defaultSize});
+    return objectAssign({}, state, getInitialState(), {tool: state.tool, subTools: state.subTools, highlight});
 }
 
 function reducer(state = getInitialState(), action) {
@@ -71,14 +81,12 @@ function reducer(state = getInitialState(), action) {
             return setHighlightOn(state, action);
         case SUBJECT_VIEWER_TYPES.SET_HIGHLIGHT_SIZE:
             return setHighlightSize(state, action);
-        case SUBJECT_VIEWER_TYPES.SET_PAN:
-            return setPan(state, action);
         case SUBJECT_VIEWER_TYPES.SET_ANNOTATIONS:
             return setAnnotations(state, action);
-        case SUBJECT_VIEWER_TYPES.RESET_PAN:
-            return resetPan(state);
         case SUBJECT_VIEWER_TYPES.RESET_ANNOTATIONS:
             return resetAnnotations(state);
+        case VIEWER_TYPES.SET_VIEWER_SIZE:
+            return setHighlightDefaultSize(state, action);
         case VIEWER_TYPES.RESET: 
             return reset(state);
         default:

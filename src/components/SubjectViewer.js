@@ -4,22 +4,15 @@ import {connect} from 'react-redux';
 import {FullImageItem} from './scene';
 import ImageViewer from './ImageViewer';
 import Toolbar from './Toolbar';
-import {ToolSelector, HighlightControls, Highlighter, AnnotationTools, PanTools} from './subjectViewerTools';
+import {ToolSelector, Highlighter, AnnotationTools, PanTools} from './subjectViewerTools';
 import {switchOn} from '../utils';
 import {extendPropTypes} from './componentUtils';
 import {add} from '../geometry';
-import {TOOL_TYPES, SUBTOOL_TYPES, setPan, setAnnotations, setHighlightSize} from '../actions/subjectViewer';
+import {setPan} from '../actions/viewer';
+import {TOOL_TYPES, SUBTOOL_TYPES, setAnnotations} from '../actions/subjectViewer';
 import {ControlPointItem, LineItem, RectItem} from './subjectViewerItems';
 
 const PAN_DELTA = 10;
-const HIGHLIGHT_SCALE = 1.0 / 35;
-
-function getHighlightSize(width) {
-    // empirically this gives approximately the right highlighter size for a row in the weather report 
-    // fitted to the given width
-
-    return Math.round(HIGHLIGHT_SCALE * width);
-}
 
 class ViewerWithTools extends ImageViewer {
     constructor(props) {
@@ -34,7 +27,6 @@ class ViewerWithTools extends ImageViewer {
 
     renderScene() {
         this.scene.clear();
-        this.scene.origin = this.props.pan;
         this.imageItem = new FullImageItem(this.props.img)
         this.scene.addItem(this.imageItem);
         
@@ -47,8 +39,8 @@ class ViewerWithTools extends ImageViewer {
         });
     }
 
-    setPan() {
-        this.props.dispatch(setPan(this.scene.origin));
+    setPan(pan) {
+        this.props.dispatch(setPan(pan));
     }
 
     setAnnotations() {
@@ -57,23 +49,10 @@ class ViewerWithTools extends ImageViewer {
         this.props.dispatch(setAnnotations({lines, rectangles}));
     }
 
-    componentDidMount() {
-        super.componentDidMount();
-        // set an initial size for the highlighter based on the width of the viewer
-        // TODO handleResize
-        // TODO - handle reset - might need a new action setDefaultHightlightSize to set the default size, then fire setHighlightSize to the default
-        // reset would then use the default
-
-        const [width] = this.getViewerSize();
-        const highlightSize = getHighlightSize(width);
-        this.props.dispatch(setHighlightSize(highlightSize));
-    }
-    
     componentDidUpdate(prevProps) {
         super.componentDidUpdate(prevProps);
 
-        if (this.props.pan !== prevProps.pan ||
-            this.props.tool !== prevProps.tool ||
+        if (this.props.tool !== prevProps.tool ||
             this.props.subTool !== prevProps.subTool ||
             this.props.annotations !== prevProps.annotations
         ) {
@@ -111,7 +90,6 @@ class ViewerWithTools extends ImageViewer {
     }
 
     handleKeyDown(e) {
-        console.log(e.keyCode);
         let delta = null;
 
         switch (e.keyCode) {
@@ -131,8 +109,8 @@ class ViewerWithTools extends ImageViewer {
 
         if (delta) {
             e.preventDefault(); // prevent scrolling window
-            this.scene.origin = add(this.scene.origin, delta);
-            this.scene.update();
+            this.pan = add(this.pan, delta);
+            this.handlePan(this.pan);
         }
     }
 
@@ -201,7 +179,6 @@ class ViewerWithTools extends ImageViewer {
                     this.panning = false;
                     this.removeMouseMoveHandler();
                     this.setCursor();
-                    this.setPan();
                 }
             },
             [TOOL_TYPES.ANNOTATE]: () => switchOn(this.props.subTool, {
@@ -271,7 +248,8 @@ class ViewerWithTools extends ImageViewer {
                         break;
                 }
 
-                this.scene.origin = add(this.scene.origin, delta);
+                const pan = add(this.props.pan, delta);
+                this.setPan(pan);
             },
             [TOOL_TYPES.ANNOTATE]: () => switchOn(this.props.subTool, {
                 [SUBTOOL_TYPES.ANNOTATE.MOVE]: () => {
@@ -300,6 +278,7 @@ class ViewerWithTools extends ImageViewer {
 }
 
 ViewerWithTools.propTypes = extendPropTypes(ImageViewer.propTypes, {
+    img: PropTypes.instanceOf(Element).isRequired,
     tool: PropTypes.string.isRequired,
     subTool: PropTypes.string.isRequired,
     pan: PropTypes.arrayOf(PropTypes.number).isRequired,
@@ -320,18 +299,17 @@ class SubjectViewer extends React.Component {
     }
 
     render() {
-        const {tool, subTool, zoomValue, zoomPercentage, rotation, highlight, pan, annotations, img, dispatch} = this.props;
+        const {tool, subTool, zoomValue, zoomScale, imageSize, rotation, highlight, pan, annotations, img, dispatch} = this.props;
 
         return (
             <div className="viewer-container">
                 <div className="viewer-inner-container">
-                    <Toolbar zoomValue={zoomValue} zoomPercentage={zoomPercentage} dispatch={dispatch} >
-                        <HighlightControls highlight={highlight} dispatch={dispatch} />
+                    <Toolbar zoomValue={zoomValue} zoomScale={zoomScale} highlight={highlight} dispatch={dispatch} >
                         <ToolSelector tool={tool} dispatch={dispatch} />
                         {this.renderToolMenu()}
                     </Toolbar>
-                    <ViewerWithTools tool={tool} subTool={subTool} pan={pan} img={img} zoomValue={zoomValue} rotation={rotation} annotations={annotations} dispatch={dispatch} >
-                        <Highlighter highlight={highlight} />
+                    <ViewerWithTools tool={tool} subTool={subTool} pan={pan} imageSize={imageSize} zoomScale={zoomScale} rotation={rotation} annotations={annotations} img={img} dispatch={dispatch} >
+                        <Highlighter rotation={rotation} highlight={highlight} />
                     </ViewerWithTools>
                 </div>
             </div>
@@ -343,7 +321,8 @@ SubjectViewer.propTypes = {
     tool: PropTypes.string.isRequired,
     subTool: PropTypes.string,
     zoomValue: PropTypes.string.isRequired,
-    zoomPercentage: PropTypes.number.isRequired,
+    zoomScale: PropTypes.number.isRequired,
+    imageSize: PropTypes.arrayOf(PropTypes.number).isRequired,
     rotation: PropTypes.number.isRequired,
     error: PropTypes.string,
     highlight: PropTypes.object.isRequired,
@@ -356,10 +335,10 @@ SubjectViewer.propTypes = {
 
 function mapStateToProps(storeState) {
     const {viewer, image} = storeState;
-    const {zoomValue, zoomPercentage, rotation, error, tool, subTools, highlight, pan, annotations} = viewer;
+    const {zoomValue, zoomScale, imageSize, rotation, error, tool, subTools, highlight, pan, annotations} = viewer;
     const {img} = image;
 
-    return {zoomValue, zoomPercentage, rotation, error, tool, subTool: subTools[tool], highlight, pan, annotations, img};
+    return {zoomValue, zoomScale, imageSize, rotation, error, tool, subTool: subTools[tool], highlight, pan, annotations, img};
 }
 
 export default connect(

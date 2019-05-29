@@ -1,11 +1,10 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import {classList} from '../utils';
 import {MenuButton, ToolButton, ButtonGroup, ToolButtonContainer} from './toolbarButtons';
-import {TOOL_TYPES, SUBTOOL_TYPES, setTool, setSubTool, setHighlightOn, setHighlightSize, resetAnnotations, resetPan} from '../actions/subjectViewer';
+import {resetPan} from '../actions/viewer';
+import {TOOL_TYPES, SUBTOOL_TYPES, setTool, setSubTool, resetAnnotations} from '../actions/subjectViewer';
+import {classList} from '../utils';
 import {px} from './componentUtils';
-
-const HIGHLIGHT_DELTA = 2;
 
 export class ToolSelector extends React.Component {
     constructor(props) {
@@ -35,87 +34,30 @@ ToolSelector.propTypes = {
     dispatch:  PropTypes.func.isRequired
 };
 
-export class HighlightControls extends React.Component {
-    constructor(props) {
-        super(props);
-        this.handleHighlighterSwitch = this.handleHighlighterSwitch.bind(this);
-        this.handleExpandHighlighter = this.handleExpandHighlighter.bind(this);
-        this.handleShrinkHighlighter = this.handleShrinkHighlighter.bind(this);
-    }
-
-    renderHighlighterToggle() {
-        const {highlight} = this.props;
-        const highlightOn = highlight.on;
-        const className = classList([
-            ["fa fa-fw", true],
-            ["fa-toggle-on", highlightOn],
-            ["fa-toggle-off", !highlightOn]
-        ]);
-
-        return (
-            <label className="menu-switch" htmlFor="highlighter-toggle" title="Toggle highlighter">
-                {highlightOn ? "Highlight On" : "Highlight Off"} <i className={className} />
-                <input id="highlighter-toggle" type="checkbox" onChange={this.handleHighlighterSwitch} />
-            </label>
-        );
-    }
-
-    render() {
-        const {on, size} = this.props.highlight;
-        
-        return (
-            <ButtonGroup separatorRight>
-                {this.renderHighlighterToggle()}
-                <MenuButton 
-                    title="Expand highlighter" 
-                    onClick={this.handleExpandHighlighter} 
-                    iconClass="fa-expand" 
-                    disabled={!on} 
-                />
-                <MenuButton 
-                    title="Shrink highlighter" 
-                    onClick={this.handleShrinkHighlighter} 
-                    iconClass="fa-compress" 
-                    disabled={!on || size === HIGHLIGHT_DELTA} 
-                />
-           </ButtonGroup>
-        );
-    }
-
-    handleHighlighterSwitch() {
-        const on = this.props.highlight.on;
-        this.props.dispatch(setHighlightOn(!on));
-    }
-
-    handleExpandHighlighter() {
-        const size = this.props.highlight.size;
-        this.props.dispatch(setHighlightSize(size + HIGHLIGHT_DELTA));
-    }
-
-    handleShrinkHighlighter() {
-        const size = this.props.highlight.size;
-        this.props.dispatch(setHighlightSize(size - HIGHLIGHT_DELTA));
-    }
-}
-
-HighlightControls.propTypes = {
-    highlight: PropTypes.object.isRequired,
-    dispatch: PropTypes.func.isRequired
-};
-
 export function Highlighter(props) {
-    if (!props.highlight.on) {
+    const {highlight, rotation} = props;
+
+    if (!highlight.on) {
         return null;
     }
 
-    const style = {height: px(props.highlight.size)};
+    const className = classList([
+        ["highlighter", true],
+        ["highlighter-horizontal", rotation % 2 === 0],
+        ["highlighter-vertical", rotation % 2 === 1]
+    ]);
+
+    const size = px(highlight.size);
+
+    const style = rotation % 2 === 0 ? {height: size} : {width: size};
 
     return (
-        <div className="highlighter" style={style}></div>
+        <div className={className} style={style}></div>
     );
 }
 
 Highlighter.propTypes = {
+    rotation: PropTypes.number.isRequired,
     highlight: PropTypes.object.isRequired
 }
 

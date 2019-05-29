@@ -1,11 +1,4 @@
 import {sortBy} from '../utils';
-import {round} from '../geometry';
-
-function applyTransform(args, v) {
-    const [a, b, c, d, e, f] = args;
-    const [x, y] = v;
-    return [a * x + c * y + e, b * x + d * y + f];
-}
 
 // based on Qt's GraphicsScene
 
@@ -15,7 +8,6 @@ export class Scene {
         this.items = [];
         this.origin = [0, 0];
         this.scale = 1.0;
-        this.rotation = 0;
     }
 
     _findInsertIndex(item) {
@@ -54,45 +46,10 @@ export class Scene {
         return this.items.filter(item => item instanceof cls);
     }
 
-    getTransform() {
-        const canvas = this.ctx.canvas;
-        const w = canvas.width, h = canvas.height;
-
-        switch (this.rotation) {
-            case 0:
-                return [1, 0, 0, 1, 0, 0];
-            case 1:
-                return [0, 1, -1, 0, w, 0];
-            case 2:
-                return [-1, 0, 0, -1, w, h];
-            case 3:
-                return [0, -1, 1, 0, 0, h];
-        }
-    }
-
-    getInverseTransform() {
-        const canvas = this.ctx.canvas;
-        const w = canvas.width, h = canvas.height;
-
-        switch (this.rotation) {
-            case 0:
-                return [1, 0, 0, 1, 0, 0];
-            case 1:
-                return [0, -1, 1, 0, 0, w];
-            case 2:
-                return [-1, 0, 0, -1, w, h];
-            case 3:
-                return [0, 1, -1, 0, h, 0];
-        }
-    }
-
     update() {
         const canvas = this.ctx.canvas;
         this.ctx.clearRect(0, 0, canvas.width, canvas.height);
         this.ctx.save();
-
-        const transform = this.getTransform();
-        this.ctx.setTransform(...transform);
 
         this.items.forEach(function(item) {
             if (item.isVisible()) {
@@ -122,19 +79,16 @@ export class Scene {
     }
 
     fromView(pos) {
-        // pos is a position in the drawn scene, so includes both scaling and rotation
+        // pos is a position in the drawn scene, so includes both scaling
 
-        const transform = this.getInverseTransform();
-        const [x, y] = applyTransform(transform, pos);
+        const [x, y] = pos;
         const [ox, oy] = this.origin;
-        return round([x / this.scale - ox, y / this.scale - oy]);
+        return [x / this.scale - ox, y / this.scale - oy];
     }
 
     deltaFromView(delta) {
-        const transform = this.getInverseTransform();
-        transform[4] = transform[5] = 0;
-        const [x, y] = applyTransform(transform, delta);
-        return round([x / this.scale, y / this.scale]);
+        const [dx, dy] = delta;
+        return [dx / this.scale, dy / this.scale];
     }
 
     sizeToScene(size) {

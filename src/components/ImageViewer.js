@@ -1,30 +1,56 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import {switchOn} from '../utils';
 import {Scene} from './scene';
-import {setZoomPercentage} from '../actions/viewer';
+import {scale, getRotationMatrix, getInverseRotationMatrix, multiplyMatrixVector, multiplyMatrixMatrix} from '../geometry';
+import {setViewerSize} from '../actions/viewer';
 import {setImageMetadata} from '../actions/image';
 
-const MARGIN = 0;
+function getCssTransform(transform) {
+    // https://developer.mozilla.org/en-US/docs/Web/CSS/transform-function/matrix
+    const [[a, c, tx], [b, d, ty]] = transform;
+    return `matrix(${a},${b},${c},${d},${tx},${ty})`;
+}
 
 class ImageViewer extends React.Component {
     constructor(props) {
         super(props);
         this.viewerRef = null;
         this.canvasRef = null;
+        this.handlePan = this.handlePan.bind(this);
         this.handleResize = this.handleResize.bind(this);
         this.handleKeyDown = this.handleKeyDown.bind(this);
         this.handleKeyUp = this.handleKeyUp.bind(this);
         this.handleMouseDown = this.handleMouseDown.bind(this);
         this.handleMouseUp = this.handleMouseUp.bind(this);
         this.handleMouseMove = this.handleMouseMove.bind(this);
-        this.handleZoom = this.handleZoom.bind(this);
     }
 
     render() {
+        const {zoomScale, imageSize} = this.props;
+        const [width, height] = scale(imageSize, zoomScale);
+        const transform = this.getTransform();
+
+        const style = {
+            cursor: this.getCursor(),
+            transform: getCssTransform(transform),
+            transformOrigin: "top left"
+        }
+
         return (
-            <div className="viewer" ref={el => this.viewerRef = el} onKeyDown={this.handleKeyDown} onKeyUp={this.handleKeyUp} tabIndex="0">
-                <canvas onMouseDown={this.handleMouseDown} style={{cursor: this.getCursor()}} ref={el => this.canvasRef = el} />
+            <div 
+                className="viewer" 
+                ref={el => this.viewerRef = el} 
+                onKeyDown={this.handleKeyDown} 
+                onKeyUp={this.handleKeyUp} 
+                onMouseDown={this.handleMouseDown} 
+                tabIndex="0"
+            >
+                <canvas 
+                    width={width}
+                    height={height} 
+                    style={style} 
+                    ref={el => this.canvasRef = el} 
+                />
                 {this.props.children}
             </div>
         );
@@ -36,20 +62,18 @@ class ImageViewer extends React.Component {
     componentDidMount() {
         this.ctx = this.canvasRef.getContext('2d');
         this.scene = new Scene(this.ctx);
-        this.scene.origin = [MARGIN, MARGIN];
-        this.scene.rotation = this.props.rotation;
         this.renderScene();
         this.scene.update();
 
-        this.handleZoom();
+        this.handleResize();
 
         window.addEventListener('mouseup', this.handleMouseUp, false);
         window.addEventListener('resize', this.handleResize, false);
 
-        const {img} = this.props;
+        const {imageSize} = this.props;
         const imageMetadata = {
-            naturalWidth: img.naturalWidth,
-            naturalHeight: img.naturalHeight,
+            naturalWidth: imageSize[0],
+            naturalHeight: imageSize[1],
             clientWidth: this.canvasRef.width,
             clientHeight: this.canvasRef.height
         };
@@ -59,15 +83,16 @@ class ImageViewer extends React.Component {
 
     componentWillUnmount() {
         window.removeEventListener('mouseup', this.handleMouseUp);
-        window.removeEventListener('resize', this.handleZoom);
+        window.removeEventListener('resize', this.handleResize);
     }
 
     componentDidUpdate(prevProps) {
-        if (prevProps.zoomValue !== this.props.zoomValue || prevProps.rotation !== this.props.rotation) {
-            this.scene.rotation = this.props.rotation;
-            this.handleZoom();
+        if (prevProps.zoomScale !== this.props.zoomScale) {
+            const {zoomScale} = this.props;
+            this.scene.scale = zoomScale;
+            this.scene.update();
         }
-    }
+   }
 
     addMouseMoveHandler() {
         this.canvasRef.addEventListener('mousemove', this.handleMouseMove, false);
@@ -77,17 +102,39 @@ class ImageViewer extends React.Component {
         this.canvasRef.removeEventListener('mousemove', this.handleMouseMove);
     }
 
+    getTransform() {
+        const {zoomScale, imageSize, pan, rotation} = this.props;
+        const [px, py] = pan;
+        const rotationMatrix = getRotationMatrix(rotation, scale(imageSize, zoomScale));
+        const translationMatrix = [[1, 0, zoomScale * px], [0, 1, zoomScale * py]];
+
+        return multiplyMatrixMatrix(rotationMatrix, translationMatrix);
+    }
+
+    getInverseTransform() {
+        const {zoomScale, imageSize, pan, rotation} = this.props;
+        const [px, py] = pan;
+        const inverseRotationMatrix = getInverseRotationMatrix(rotation, scale(imageSize, zoomScale));
+        const inverseTranslationMatrix = [[1, 0, -zoomScale * px], [0, 1, -zoomScale * py]];
+
+        return multiplyMatrixMatrix(inverseTranslationMatrix, inverseRotationMatrix);
+    }
+
     getCursor() {
         return 'auto';
     }
 
     getMousePos(e) {
-        const rect = this.canvasRef.getBoundingClientRect();
-        return this.scene.fromView([e.clientX - rect.left, e.clientY - rect.top]);
+        const rect = this.viewerRef.getBoundingClientRect();
+        const pos = [e.clientX - rect.left, e.clientY - rect.top];
+        const inverseTransform = this.getInverseTransform();
+        const scenePos = multiplyMatrixVector(inverseTransform, pos);
+        return this.scene.fromView(scenePos);
     }
 
-    getMouseDelta(e, direction=null) {
+    getMouseDelta(e, direction = null) {
         let delta;
+        
         switch (direction) {
             case 'horizontal':
                 delta = [e.movementX, 0];
@@ -99,12 +146,22 @@ class ImageViewer extends React.Component {
                 delta = [e.movementX, e.movementY];
                 break;
         }
-        
-        return this.scene.deltaFromView(delta);
+
+        const inverseTransform = this.getInverseTransform();
+        inverseTransform[0][2] = 0;
+        inverseTransform[1][2] = 0;
+        const sceneDelta = multiplyMatrixVector(inverseTransform, delta);
+
+        return this.scene.deltaFromView(sceneDelta);
     }
 
     handleResize() {
-        this.handleZoom();
+        const size = this.getViewerSize();
+        this.props.dispatch(setViewerSize(size));
+    }
+
+    handlePan() {
+        this.canvasRef.style.transform = getCssTransform(this.getTransform());
     }
 
     handleKeyDown() {
@@ -122,33 +179,6 @@ class ImageViewer extends React.Component {
     handleMouseMove() {
     }
 
-    scaleCanvas(scale) {
-        let [width, height] = this.getFullSize();
-
-        width = Math.floor(scale * width);
-        height = Math.floor(scale * height);
-        this.canvasRef.width = width;
-        this.canvasRef.height = height;
-    }
-
-    getImageSize() {
-        const {img} = this.props;
-        return [img.naturalWidth, img.naturalHeight];
-    }
-
-    getFullSize() {
-        // return full size of canvas, allowing for rotation
-
-        const [width, height] = this.getImageSize();
-
-        if (this.props.rotation % 2 === 0) {
-            return [width + 2 * MARGIN, height + 2 * MARGIN];
-        }
-        else {
-            return [height + 2 * MARGIN, width + 2 * MARGIN];
-        }
-    }
-
     getViewerSize() {
         // return size of viewer
         return [this.viewerRef.clientWidth, this.viewerRef.clientHeight];
@@ -156,53 +186,16 @@ class ImageViewer extends React.Component {
 
     getImageRect() {
         // return image tl and br
-        const size = this.getImageSize();
-        return [[0, 0], size];
-    }
-
-    handleZoom() {
-        let zoomScale = 0;
-        const {zoomValue} = this.props;
-        const [width, height] = this.getFullSize();
-
-        switchOn(zoomValue, {
-            'actual-size': () => {
-                zoomScale = 1.0;
-                this.scaleCanvas(zoomScale);
-            },
-
-            'fit-height': () => {
-                const [containerWidth, containerHeight] = this.getViewerSize();
-                zoomScale = Math.min(Infinity, containerWidth / width, containerHeight / height);
-                this.scaleCanvas(zoomScale);
-            },
-
-            'fit-width': () => {
-                const [containerWidth] = this.getViewerSize();
-                zoomScale = containerWidth / width;
-                this.scaleCanvas(zoomScale);
-            },
-
-            'default': () => {
-                const percentage = parseInt(zoomValue);
-                zoomScale = percentage / 100;
-                this.scaleCanvas(zoomScale);
-            }
-        });
-
-        // pass zoomValue back to toolbar so that it can handle zoom in/out
-        const zoomPercentage = Math.round(zoomScale * 100);
-        this.props.dispatch(setZoomPercentage(zoomValue, zoomPercentage));
-
-        this.scene.scale = zoomScale;
-        this.scene.update();
+        return [[0, 0], this.props.imageSize];
     }
 }
 
 ImageViewer.propTypes = {
-    img: PropTypes.instanceOf(Element).isRequired,
-    zoomValue: PropTypes.string.isRequired,
+    imageSize: PropTypes.arrayOf(PropTypes.number).isRequired,
+    zoomScale: PropTypes.number.isRequired,
+    zoomToCenter: PropTypes.bool,
     rotation: PropTypes.number.isRequired,
+    pan: PropTypes.arrayOf(PropTypes.number).isRequired,
     dispatch: PropTypes.func.isRequired,
     children: PropTypes.element
 };

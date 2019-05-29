@@ -5,9 +5,7 @@ export const SUBJECT_VIEWER_TYPES = createActionTypes('subjectViewer', {
     SET_SUBTOOL: 'SET_SUBTOOL',
     SET_HIGHLIGHT_ON: 'SET_HIGHLIGHT_ON',
     SET_HIGHLIGHT_SIZE: 'SET_HIGHLIGHT_SIZE',
-    SET_PAN: 'SET_PAN',
     SET_ANNOTATIONS: 'SET_ANNOTATIONS',
-    RESET_PAN: 'RESET_PAN',
     RESET_ANNOTATIONS: 'RESET_ANNOTATIONS'
 });
 
@@ -38,13 +36,6 @@ export function setTool(tool) {
     };
 }
 
-export function setPan(pan) {
-    return {
-        type: SUBJECT_VIEWER_TYPES.SET_PAN,
-        pan
-    };
-}
-
 export function setSubTool(subTool) {
     return {
         type: SUBJECT_VIEWER_TYPES.SET_SUBTOOL,
@@ -71,12 +62,6 @@ export function setAnnotations(annotations) {
         type: SUBJECT_VIEWER_TYPES.SET_ANNOTATIONS,
         annotations
     }
-}
-
-export function resetPan() {
-    return {
-        type: SUBJECT_VIEWER_TYPES.RESET_PAN
-    };
 }
 
 export function resetAnnotations() {
