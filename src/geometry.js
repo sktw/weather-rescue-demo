@@ -117,6 +117,11 @@ export function rectTranslate(rect, v) {
     return [add(tl, v), add(br, v)];
 }
 
+export function rectScale(rect, scale) {
+    const [[x0, y0], [x1, y1]] = rect;
+    return [[scale * x0, scale * y0], [scale * x1, scale * y1]];
+}
+
 export function rectExpand(rect, delta) {
     const [[x0, y0], [x1, y1]] = rect;
     const [dx, dy] = delta;

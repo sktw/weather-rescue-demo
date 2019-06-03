@@ -32,8 +32,8 @@ const initialState = objectAssign({}, {
         size: 50
     },
     annotations: {
-        lines: [],
-        rectangles: []
+        nextId: 1,
+        map: {}
     }
 });
 
@@ -140,22 +140,112 @@ describe('reducer', () => {
     });
 
 
-    it('should handle SET_ANNOTATIONS', () => {
-        let state = initialState;
-        checker.setState(state);
+    it('should handle ADD_ANNOTATION', () => {
+        const start = objectAssign({}, initialState);
+        checker.setState(start);
 
-        state = reducer(state, {
-            type: SubjectViewerActions.SUBJECT_VIEWER_TYPES.SET_ANNOTATIONS,
-            annotations: {
-                lines: [[[4, 19], [-6, 100]]],
-                rectangles: []
+        const state = reducer(start, {
+            type: SubjectViewerActions.SUBJECT_VIEWER_TYPES.ADD_ANNOTATION,
+            annotation: {
+                kind: 'line',
+                line: [[4, 19], [-6, 100]]
             }
         });
 
-        expect(state).to.deep.equal(objectAssign({}, initialState, {
+        expect(state).to.deep.equal(objectAssign({}, start, {
             annotations: {
-                lines: [[[4, 19], [-6, 100]]],
-                rectangles: []
+                nextId: 2,
+                map: {
+                    1: {
+                        kind: 'line',
+                        line: [[4, 19], [-6, 100]]
+                    }
+                }
+            }
+        }));
+
+        expect(checker.check()).to.be.true;
+    });
+
+    it('should handle UPDATE_ANNOTATION', () => {
+        const start = objectAssign({}, initialState, {
+            annotations: {
+                nextId: 3,
+                map: {
+                    1: {
+                        kind: 'line',
+                        line: [[4, 19], [-6, 100]]
+                    },
+                    2: {
+                        kind: 'rect',
+                        rect: [[10, 20], [150, 200]]
+                    }
+                }
+            }
+        });
+
+        checker.setState(start);
+
+        const state = reducer(start, {
+            type: SubjectViewerActions.SUBJECT_VIEWER_TYPES.UPDATE_ANNOTATION,
+            id: 1,
+            annotation: {
+                line: [[4, 19], [50, 100]]
+            }
+        });
+
+        expect(state).to.deep.equal(objectAssign({}, start, {
+            annotations: {
+                nextId: 3,
+                map: {
+                    1: {
+                        kind: 'line',
+                        line: [[4, 19], [50, 100]]
+                    },
+                    2: {
+                        kind: 'rect',
+                        rect: [[10, 20], [150, 200]]
+                    }
+                }
+            }
+        }));
+
+        expect(checker.check()).to.be.true;
+    });
+
+    it('should handle REMOVE_ANNOTATION', () => {
+        const start = objectAssign({}, initialState, {
+            annotations: {
+                nextId: 3,
+                map: {
+                    1: {
+                        kind: 'line',
+                        line: [[4, 19], [-6, 100]]
+                    },
+                    2: {
+                        kind: 'rect',
+                        rect: [[10, 20], [150, 200]]
+                    }
+                }
+            }
+        });
+
+        checker.setState(start);
+
+        const state = reducer(start, {
+            type: SubjectViewerActions.SUBJECT_VIEWER_TYPES.REMOVE_ANNOTATION,
+            id: 1
+        });
+
+        expect(state).to.deep.equal(objectAssign({}, start, {
+            annotations: {
+                nextId: 3,
+                map: {
+                    2: {
+                        kind: 'rect',
+                        rect: [[10, 20], [150, 200]]
+                    }
+                }
             }
         }));
 
@@ -163,56 +253,86 @@ describe('reducer', () => {
     });
 
     it('should handle RESET_ANNOTATIONS and reset only annotations', () => {
-        let state = objectAssign({}, initialState, {
+        const start = objectAssign({}, initialState, {
             subTools: {
                 [TOOL_TYPES.ANNOTATE]: SUBTOOL_TYPES.ANNOTATE.MOVE,
                 [TOOL_TYPES.PAN]: SUBTOOL_TYPES.PAN.HORIZONTAL
             },
-            pan: [5, 4],
+            highlight: {
+                on: true,
+                defaultSize: 50,
+                size: 18
+            },
             annotations: {
-                lines: [[[4, 19], [-6, 100]]],
-                rectangles: []
+                nextId: 3,
+                map: {
+                    1: {
+                        kind: 'line',
+                        line: [[4, 19], [-6, 100]]
+                    },
+                    2: {
+                        kind: 'rect',
+                        rect: [[10, 20], [150, 200]]
+                    }
+                }
             }
         });
 
-        checker.setState(state);
+        checker.setState(start);
 
-        state = reducer(state, {
+        const state = reducer(start, {
             type: SubjectViewerActions.SUBJECT_VIEWER_TYPES.RESET_ANNOTATIONS
         });
 
-        expect(state).to.deep.equal(objectAssign({}, initialState, {
+        expect(state).to.deep.equal(objectAssign({}, start, {
             subTools: {
                 [TOOL_TYPES.ANNOTATE]: SUBTOOL_TYPES.ANNOTATE.MOVE,
                 [TOOL_TYPES.PAN]: SUBTOOL_TYPES.PAN.HORIZONTAL
             },
-            pan: [5, 4],
+            highlight: {
+                on: true,
+                defaultSize: 50,
+                size: 18
+            },
             annotations: {
-                lines: [],
-                rectangles: []
+                nextId: 1,
+                map: {}
             }
         }));
 
         expect(checker.check()).to.be.true;
     });
 
-    it('should handle RESET and reset all but tool and subtool', () => {
-        let state = objectAssign({}, initialState, {
+    it('should handle RESET and reset all but tool and subtool and highlighter default size', () => {
+        const start = objectAssign({}, initialState, {
             tool: TOOL_TYPES.ANNOTATE,
             subTools: {
                 [TOOL_TYPES.ANNOTATE]: SUBTOOL_TYPES.ANNOTATE.RECTANGLE,
                 [TOOL_TYPES.PAN]: SUBTOOL_TYPES.PAN.ALL
             },
-            pan: [6, 6],
+            highlight: {
+                on: true,
+                defaultSize: 28,
+                size: 18
+            },
             annotations: {
-                lines: [],
-                rectangles: [[[4, 5], [-60, 4]]]
+                nextId: 3,
+                map: {
+                    1: {
+                        kind: 'line',
+                        line: [[4, 19], [-6, 100]]
+                    },
+                    2: {
+                        kind: 'rect',
+                        rect: [[10, 20], [150, 200]]
+                    }
+                }
             }
         });
 
-        checker.setState(state);
+        checker.setState(start);
 
-        state = reducer(state, {
+        const state = reducer(start, {
             type: ViewerActions.VIEWER_TYPES.RESET
         });
 
@@ -221,6 +341,11 @@ describe('reducer', () => {
             subTools: {
                 [TOOL_TYPES.ANNOTATE]: SUBTOOL_TYPES.ANNOTATE.RECTANGLE,
                 [TOOL_TYPES.PAN]: SUBTOOL_TYPES.PAN.ALL
+            },
+            highlight: {
+                on: false,
+                defaultSize: 28,
+                size: 28
             }
         }));
 
@@ -280,21 +405,52 @@ describe('setHighlightSize', () => {
     });
 });
 
-describe('setAnnotations', () => {
-    it('should set the annotations', () => {
+describe('addAnnotation', () => {
+    it('should add an annotation', () => {
         const store = storeCreator(initialState);
-        store.dispatch(SubjectViewerActions.setAnnotations({
-            lines: [[[4, 19], [-6, 100]]],
-            rectangles: []
+        store.dispatch(SubjectViewerActions.addAnnotation({
+            kind: 'line',
+            line: [[4, 19], [-6, 100]],
         }));
         const actions = store.getActions();
         expect(actions).to.have.length(1);
         expect(actions[0]).to.deep.equal({
-            type: SubjectViewerActions.SUBJECT_VIEWER_TYPES.SET_ANNOTATIONS,
-            annotations: {
-                lines: [[[4, 19], [-6, 100]]],
-                rectangles: []
+            type: SubjectViewerActions.SUBJECT_VIEWER_TYPES.ADD_ANNOTATION,
+            annotation: {
+                kind: 'line',
+                line: [[4, 19], [-6, 100]]
             }
+        });
+    });
+});
+
+describe('updateAnnotation', () => {
+    it('should update an annotation', () => {
+        const store = storeCreator(initialState);
+        store.dispatch(SubjectViewerActions.updateAnnotation(1, {
+            line: [[4, 19], [50, 100]],
+        }));
+        const actions = store.getActions();
+        expect(actions).to.have.length(1);
+        expect(actions[0]).to.deep.equal({
+            type: SubjectViewerActions.SUBJECT_VIEWER_TYPES.UPDATE_ANNOTATION,
+            id: 1,
+            annotation: {
+                line: [[4, 19], [50, 100]]
+            }
+        });
+    });
+});
+
+describe('removeAnnotation', () => {
+    it('should update an annotation', () => {
+        const store = storeCreator(initialState);
+        store.dispatch(SubjectViewerActions.removeAnnotation(3));
+        const actions = store.getActions();
+        expect(actions).to.have.length(1);
+        expect(actions[0]).to.deep.equal({
+            type: SubjectViewerActions.SUBJECT_VIEWER_TYPES.REMOVE_ANNOTATION,
+            id: 3
         });
     });
 });
@@ -310,5 +466,3 @@ describe('resetAnnotations', () => {
         });
     });
 });
-
-

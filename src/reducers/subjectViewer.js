@@ -16,8 +16,8 @@ function getInitialState() {
             size: 50
         },
         annotations: {
-            lines: [],
-            rectangles: []
+            nextId: 1,
+            map: {}
         }
     };
 }
@@ -58,16 +58,36 @@ function setHighlightDefaultSize(state, action) {
     return objectAssign({}, state, {highlight});
 }
 
-function setAnnotations(state, action) {
-    return objectAssign({}, state, {annotations: action.annotations});
+function addAnnotation(state, action) {
+    const {annotation} = action;
+    const id = state.annotations.nextId;
+    const nextId = id + 1;
+    const nextAnnotations = objectAssign({}, state.annotations, {nextId, map: objectAssign({}, state.annotations.map, {[id]: annotation})});
+
+    return objectAssign({}, state, {annotations: nextAnnotations});
+}
+
+function updateAnnotation(state, action) {
+    const {id, annotation} = action;
+    const nextAnnotations = objectAssign({}, state.annotations, {map: objectAssign({}, state.annotations.map, {[id]: objectAssign({}, state.annotations.map[id], annotation)})});
+
+    return objectAssign({}, state, {annotations: nextAnnotations});
+}
+
+function removeAnnotation(state, action) {
+    const {id} = action;
+    const nextAnnotations = objectAssign({}, state.annotations, {map: objectAssign({}, state.annotations.map)});
+    delete nextAnnotations.map[id];
+
+    return objectAssign({}, state, {annotations: nextAnnotations});
 }
 
 function resetAnnotations(state) {
-    return objectAssign({}, state, getInitialState(), {tool: state.tool, subTools: state.subTools, pan: state.pan});
+    return objectAssign({}, state, getInitialState(), {tool: state.tool, subTools: state.subTools, pan: state.pan, highlight: state.highlight});
 }
 
 function reset(state) {
-    const highlight = objectAssign({}, state.highlight, {size: state.highlight.defaultSize});
+    const highlight = objectAssign({}, state.highlight, {on: false, size: state.highlight.defaultSize});
     return objectAssign({}, state, getInitialState(), {tool: state.tool, subTools: state.subTools, highlight});
 }
 
@@ -81,8 +101,12 @@ function reducer(state = getInitialState(), action) {
             return setHighlightOn(state, action);
         case SUBJECT_VIEWER_TYPES.SET_HIGHLIGHT_SIZE:
             return setHighlightSize(state, action);
-        case SUBJECT_VIEWER_TYPES.SET_ANNOTATIONS:
-            return setAnnotations(state, action);
+        case SUBJECT_VIEWER_TYPES.ADD_ANNOTATION:
+            return addAnnotation(state, action);
+        case SUBJECT_VIEWER_TYPES.UPDATE_ANNOTATION:
+            return updateAnnotation(state, action);
+        case SUBJECT_VIEWER_TYPES.REMOVE_ANNOTATION:
+            return removeAnnotation(state, action);
         case SUBJECT_VIEWER_TYPES.RESET_ANNOTATIONS:
             return resetAnnotations(state);
         case VIEWER_TYPES.SET_VIEWER_SIZE:

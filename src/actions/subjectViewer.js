@@ -5,7 +5,9 @@ export const SUBJECT_VIEWER_TYPES = createActionTypes('subjectViewer', {
     SET_SUBTOOL: 'SET_SUBTOOL',
     SET_HIGHLIGHT_ON: 'SET_HIGHLIGHT_ON',
     SET_HIGHLIGHT_SIZE: 'SET_HIGHLIGHT_SIZE',
-    SET_ANNOTATIONS: 'SET_ANNOTATIONS',
+    ADD_ANNOTATION: 'ADD_ANNOTATION',
+    UPDATE_ANNOTATION: 'UPDATE_ANNOTATION',
+    REMOVE_ANNOTATION: 'REMOVE_ANNOTATION',
     RESET_ANNOTATIONS: 'RESET_ANNOTATIONS'
 });
 
@@ -57,11 +59,26 @@ export function setHighlightSize(size) {
     };
 }
 
-export function setAnnotations(annotations) {
+export function addAnnotation(annotation) {
     return {
-        type: SUBJECT_VIEWER_TYPES.SET_ANNOTATIONS,
-        annotations
-    }
+        type: SUBJECT_VIEWER_TYPES.ADD_ANNOTATION,
+        annotation
+    };
+}
+
+export function updateAnnotation(id, annotation) {
+    return {
+        type: SUBJECT_VIEWER_TYPES.UPDATE_ANNOTATION,
+        id,
+        annotation
+    };
+}
+
+export function removeAnnotation(id) {
+    return {
+        type: SUBJECT_VIEWER_TYPES.REMOVE_ANNOTATION,
+        id
+    };
 }
 
 export function resetAnnotations() {

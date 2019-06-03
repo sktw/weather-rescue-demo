@@ -34,33 +34,6 @@ ToolSelector.propTypes = {
     dispatch:  PropTypes.func.isRequired
 };
 
-export function Highlighter(props) {
-    const {highlight, rotation} = props;
-
-    if (!highlight.on) {
-        return null;
-    }
-
-    const className = classList([
-        ["highlighter", true],
-        ["highlighter-horizontal", rotation % 2 === 0],
-        ["highlighter-vertical", rotation % 2 === 1]
-    ]);
-
-    const size = px(highlight.size);
-
-    const style = rotation % 2 === 0 ? {height: size} : {width: size};
-
-    return (
-        <div className={className} style={style}></div>
-    );
-}
-
-Highlighter.propTypes = {
-    rotation: PropTypes.number.isRequired,
-    highlight: PropTypes.object.isRequired
-}
-
 export class AnnotationTools extends React.Component {
     constructor(props) {
         super(props);
@@ -136,3 +109,30 @@ PanTools.propTypes = {
     subTool: PropTypes.string.isRequired,
     dispatch: PropTypes.func.isRequired
 };
+
+export function Highlighter(props) {
+    const {highlight, rotation} = props;
+
+    if (!highlight.on) {
+        return null;
+    }
+
+    const className = classList([
+        ["highlighter", true],
+        ["highlighter-horizontal", rotation % 2 === 0],
+        ["highlighter-vertical", rotation % 2 === 1]
+    ]);
+
+    const size = px(highlight.size);
+
+    const style = rotation % 2 === 0 ? {height: size} : {width: size};
+
+    return (
+        <div className={className} style={style}></div>
+    );
+}
+
+Highlighter.propTypes = {
+    rotation: PropTypes.number.isRequired,
+    highlight: PropTypes.object.isRequired
+}
